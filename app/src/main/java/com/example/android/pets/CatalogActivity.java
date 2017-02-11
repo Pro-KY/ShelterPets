@@ -62,6 +62,12 @@ public class CatalogActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        displayDatabaseInfo();
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu options from the res/menu/menu_catalog.xml file.
         // This adds menu items to the app bar.
@@ -69,6 +75,7 @@ public class CatalogActivity extends AppCompatActivity {
         return true;
     }
 
+    // Insert dummy data
     private void insertPet() {
 
         // Gets the data repository in write mode
