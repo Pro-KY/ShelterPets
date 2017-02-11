@@ -75,7 +75,7 @@ public class CatalogActivity extends AppCompatActivity {
         return true;
     }
 
-    // Insert dummy data
+    // Insert dummy data when user clicks on the menu item
     private void insertPet() {
 
         // Gets the data repository in write mode
@@ -125,13 +125,67 @@ public class CatalogActivity extends AppCompatActivity {
         // Create and/or open a database to read from it
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
-        // Perform this raw SQL query "SELECT * FROM pets"
-        // to get a Cursor that contains all rows from the pets table.
-        try(Cursor cursor = db.rawQuery("SELECT * FROM " + PetEntry.TABLE_NAME, null)) {
+        // Define a projection that specifies which columns from the database
+        // you will actually use after this query.
+        String[] projection = {
+            PetEntry._ID,
+            PetEntry.COLUMN_PET_NAME,
+            PetEntry.COLUMN_PET_BREED,
+            PetEntry.COLUMN_PET_GENDER,
+            PetEntry.COLUMN_PET_WEIGHT
+        };
+
+        // Perform a query on the pets table
+        Cursor cursor = db.query(
+                PetEntry.TABLE_NAME,    // The table to query
+                projection,             // The columns to return
+                null,                   // The columns for the WHERE clause
+                null,                   // The values for the WHERE clause
+                null,                   // don't group the rows
+                null,                   // don't filter by row groups
+                null);                  // sort order
+
+        try {
             // Display the number of rows in the Cursor (which reflects the number of rows in the
             // pets table in the database).
             TextView displayView = (TextView) findViewById(R.id.text_view_pet);
-            displayView.setText("Number of rows in pets database table: " + cursor.getCount());
+            displayView.setText("The pets table contains: " + cursor.getCount() + " pets.\n\n");
+
+            // Create a header in the Text View that looks like this:
+            // _id - name - breed - gender - weight
+            displayView.append(
+                PetEntry._ID + " - " +
+                PetEntry.COLUMN_PET_NAME + " - " +
+                PetEntry.COLUMN_PET_BREED + " - " +
+                PetEntry.COLUMN_PET_GENDER + " - " +
+                PetEntry.COLUMN_PET_WEIGHT + "\n"
+            );
+
+            // Figure out the index of each column
+            int idColumnIndex = cursor.getColumnIndex(PetEntry._ID);
+            int nameColumnIndex = cursor.getColumnIndex(PetEntry.COLUMN_PET_NAME);
+            int breedColumnIndex = cursor.getColumnIndex(PetEntry.COLUMN_PET_BREED);
+            int genderColumnIndex = cursor.getColumnIndex(PetEntry.COLUMN_PET_GENDER);
+            int weightColumnIndex = cursor.getColumnIndex(PetEntry.COLUMN_PET_WEIGHT);
+
+            // Iterate through all the returned rows in the cursor
+            while(cursor.moveToNext()) {
+                int currentId = cursor.getInt(idColumnIndex);
+                String currentName = cursor.getString(nameColumnIndex);
+                String currentBreed = cursor.getString(breedColumnIndex);
+                int currentGender = cursor.getInt(genderColumnIndex);
+                int currentWeight = cursor.getInt(weightColumnIndex);
+
+                displayView.append(
+                    currentId + " - " +
+                    currentName + " - " +
+                    currentBreed + " - " +
+                    currentGender + " - " +
+                    currentWeight + "\n"
+                );
+            }
+        } finally {
+            cursor.close();
         }
     }
 
