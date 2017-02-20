@@ -2,14 +2,45 @@ package com.example.android.pets.data;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
+import android.content.UriMatcher;
 import android.database.Cursor;
 import android.net.Uri;
+import com.example.android.pets.data.PetContract;
+
+import java.net.URI;
+
+import static com.example.android.pets.data.PetContract.PATH_PETS;
 
 /**
  *  Content provider for shelter app
  */
 
 public class PetProvider extends ContentProvider {
+
+    /** URI matcher code for the content URI for the pets table */
+    private static final int PETS = 100;
+
+    /** URI matcher code for the content URI for a single pet in the pets table */
+    private static final int PET_ID = 101;
+
+    /**
+     * UriMatcher object to match a content URI to a corresponding code.
+     * The input passed into the constructor represents the code to return for the root URI.
+     * It's common to use NO_MATCH as the input for this case.
+     */
+    private static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+
+    // Static initializer. This is run the first time anything is called from this class.
+    static {
+        // The calls to addURI() go here, for all of the content URI patterns that the provider
+        // should recognize. All paths added to the UriMatcher have a corresponding code to return
+        // when a match is found.
+
+        // TODO: Add 2 content URIs to URI matcher
+        sUriMatcher.addURI(PetContract.CONTENT_AUTHORITY, PetContract.PATH_PETS, PETS);
+        sUriMatcher.addURI(PetContract.CONTENT_AUTHORITY, PetContract.PATH_PETS + "/#", PET_ID);
+    }
+
     /** Tag for the log messages */
     public static final String LOG_TAG = PetProvider.class.getSimpleName();
     // Database helper object
@@ -28,11 +59,34 @@ public class PetProvider extends ContentProvider {
     }
 
     /**
-     * Perform the query for the given URI. Use the given projection, selection, selection arguments, and sort order.
+     * Perform the query for the given URI. Use the given projection, selection, selection arguments,
+     * and sort order.
      */
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
-                        String sortOrder) {
+    public Cursor query(
+            Uri uri,
+            String[] projection,
+            String selection,
+            String[] selectionArgs,
+            String sortOrder) {
+
+        // Choose the table to query and a sort order based on the code returned for the incoming URI.
+        switch (sUriMatcher.match(uri)) {
+            // If the incoming URI was for all of "pets" table
+            case PETS:
+                // Do smth...
+                break;
+            // If the incoming URI was for the single row
+            case PET_ID:
+                // Do smth...
+                break;
+            default:
+                // If the URI is not recognized, you should do some error handling here.
+
+        }
+
+
+
         return null;
     }
 
