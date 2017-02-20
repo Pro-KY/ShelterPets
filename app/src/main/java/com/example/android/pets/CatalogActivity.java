@@ -143,7 +143,8 @@ public class CatalogActivity extends AppCompatActivity {
                 null,                   // The values for the WHERE clause
                 null,                   // don't group the rows
                 null,                   // don't filter by row groups
-                null);                  // sort order
+                null                    // sort order
+        );
 
         try {
             // Display the number of rows in the Cursor (which reflects the number of rows in the

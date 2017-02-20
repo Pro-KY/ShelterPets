@@ -1,15 +1,14 @@
 package com.example.android.pets.data;
 
 import android.content.ContentProvider;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
-import com.example.android.pets.data.PetContract;
+import com.example.android.pets.data.PetContract.PetEntry;
 
-import java.net.URI;
-
-import static com.example.android.pets.data.PetContract.PATH_PETS;
 
 /**
  *  Content provider for shelter app
@@ -70,24 +69,49 @@ public class PetProvider extends ContentProvider {
             String[] selectionArgs,
             String sortOrder) {
 
+        SQLiteDatabase database = mPetDbHelper.getReadableDatabase();
+
+        Cursor cursor;
+        int match = sUriMatcher.match(uri);
+
         // Choose the table to query and a sort order based on the code returned for the incoming URI.
-        switch (sUriMatcher.match(uri)) {
+        switch (match) {
             // If the incoming URI was for all of "pets" table
             case PETS:
-                // Do smth...
+                // Perform database query on pets table
+                cursor = database.query(
+                        PetEntry.TABLE_NAME,
+                        projection,
+                        selection,
+                        selectionArgs,
+                        null,
+                        null,
+                        sortOrder
+                );
                 break;
             // If the incoming URI was for the single row
             case PET_ID:
-                // Do smth...
+                selection = PetEntry._ID + "=?";
+                selectionArgs = new String[] {String.valueOf(ContentUris.parseId(uri))};
+
+                // Perform a query on the pets table where the specified _id to return a
+                // Cursor containing that row of the table.
+                cursor = database.query(
+                        PetEntry.TABLE_NAME,
+                        projection,
+                        selection,
+                        selectionArgs,
+                        null,
+                        null,
+                        sortOrder
+                );
                 break;
             default:
                 // If the URI is not recognized, you should do some error handling here.
+                throw new IllegalArgumentException("Cannot query unknown URI " + uri);
 
         }
-
-
-
-        return null;
+        return cursor;
     }
 
     /**
