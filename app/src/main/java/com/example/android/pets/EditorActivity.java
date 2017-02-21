@@ -15,12 +15,15 @@
  */
 package com.example.android.pets;
 
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -34,7 +37,7 @@ import com.example.android.pets.data.PetContract.PetEntry;
 import com.example.android.pets.data.PetDbHelper;
 
 /**
- * Allows user to create a new pet or edit an existing one.
+ * Allows user to create a new p et or edit an existing one.
  */
 public class EditorActivity extends AppCompatActivity {
 
@@ -113,15 +116,17 @@ public class EditorActivity extends AppCompatActivity {
      *  Get the user input from editor and save new pet data into database.
      */
     private void insertPet() {
+        Uri mNewUri;
+
+        Log.d("insertPet", "start -----");
         String nameString = mNameEditText.getText().toString().trim();
+        Log.d("nameString", nameString);
         String breedString = mBreedEditText.getText().toString().trim();
+        Log.d("breedString", breedString);
         String weightString = mWeightEditText.getText().toString().trim();
+        Log.d("weightString", weightString);
         int weight = Integer.parseInt(weightString);
-
-        PetDbHelper mDbHelper = new PetDbHelper(this);
-
-        // Gets the data repository in write mode
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+        Log.d("insertPet", "finish -----");
 
         // Create a new map of values, where column names are the keys
         ContentValues values = new ContentValues();
@@ -130,19 +135,24 @@ public class EditorActivity extends AppCompatActivity {
         values.put(PetEntry.COLUMN_PET_GENDER, mGender);
         values.put(PetEntry.COLUMN_PET_WEIGHT, weight);
 
-        // Insert the new row, returning the primary key value of the new row
-        long newRowId = db.insert(
-                PetEntry.TABLE_NAME,
-                null,
-                values);
+        mNewUri = getContentResolver().insert(
+                PetEntry.CONTENT_URI,
+                values
+        );
+
+        long newRowId = ContentUris.parseId(mNewUri);
 
         // Show a toast message depending on whether or not the insertion was successful
         if(newRowId == -1) {
             // If the row ID is -1, then there was an error with insertion.
-            Toast.makeText(this, "Error with saving pet", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.toast_error_saving_pet, Toast.LENGTH_SHORT).show();
         } else {
             // Otherwise, the insertion was successful and we can display a toast with the row ID.
-            Toast.makeText(this, "Pet saved with row id: " + newRowId, Toast.LENGTH_SHORT).show();
+            Toast.makeText(
+                    this,
+                    R.string.toast_pet_saved,
+                    Toast.LENGTH_SHORT
+            ).show();
         }
     }
 

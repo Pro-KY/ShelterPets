@@ -3,6 +3,10 @@ package com.example.android.pets.data;
 import android.net.Uri;
 import android.provider.BaseColumns;
 
+import static com.example.android.pets.data.PetContract.PetEntry.GENDER_FEMALE;
+import static com.example.android.pets.data.PetContract.PetEntry.GENDER_MALE;
+import static com.example.android.pets.data.PetContract.PetEntry.GENDER_UNKNOWN;
+
 
 public final class PetContract {
 
@@ -22,15 +26,28 @@ public final class PetContract {
 
         // table columns
         public static final String _ID = BaseColumns._ID;
-        public static final String COLUMN_PET_NAME = "name";
-        public static final String COLUMN_PET_BREED = "breed";
-        public static final String COLUMN_PET_GENDER = "gender";
-        public static final String COLUMN_PET_WEIGHT = "weight";
+
+        public static final String COLUMN_PET_NAME = "name";      // String
+        public static final String COLUMN_PET_BREED = "breed";    // String
+        public static final String COLUMN_PET_GENDER = "gender";  // int
+        public static final String COLUMN_PET_WEIGHT = "weight";  // int
 
         // Possible values for the gender of animals.
         public static final int GENDER_UNKNOWN = 0;
         public static final int GENDER_MALE = 1;
         public static final int GENDER_FEMALE = 2;
+    }
 
+    public static boolean isGenderValueValid(int genderValue) {
+        switch (genderValue) {
+            case GENDER_UNKNOWN:
+                return true;
+            case GENDER_MALE:
+                return true;
+            case GENDER_FEMALE:
+                return true;
+            default:
+                return false;
+        }
     }
 }
