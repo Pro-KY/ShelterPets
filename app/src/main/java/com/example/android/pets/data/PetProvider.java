@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.util.Log;
 import com.example.android.pets.data.PetContract.PetEntry;
 
+import static android.R.attr.data;
 import static android.R.attr.name;
 
 
@@ -158,7 +159,22 @@ public class PetProvider extends ContentProvider {
      */
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
-        return 0;
+        // Get writable database
+        SQLiteDatabase database = mPetDbHelper.getWritableDatabase();
+
+        int match = sUriMatcher.match(uri);
+
+        switch(match) {
+            case PETS:
+                return database.delete(PetEntry.TABLE_NAME, selection, selectionArgs);
+            case PET_ID:
+                // Delete a single row given by the ID in the URI
+                selection = PetEntry._ID + "=?";
+                selectionArgs = new String[] {String.valueOf(ContentUris.parseId(uri))};
+                return database.delete(PetEntry.TABLE_NAME, selection, selectionArgs);
+            default:
+                throw new IllegalArgumentException("Deletion is not supported for " + uri);
+        }
     }
 
     /**
@@ -166,9 +182,17 @@ public class PetProvider extends ContentProvider {
      */
     @Override
     public String getType(Uri uri) {
-        return null;
-    }
+        int match = sUriMatcher.match(uri);
 
+        switch(match) {
+            case PETS:
+                return PetEntry.CONTENT_LIST_TYPE;
+            case PET_ID:
+                return PetEntry.CONTENT_ITEM_TYPE;
+            default:
+                throw new IllegalStateException("Unknown URI " + uri + " with match " + match);
+        }
+    }
 
     /**
      * Insert a pet into the database with the given content values. Return the new content URI
