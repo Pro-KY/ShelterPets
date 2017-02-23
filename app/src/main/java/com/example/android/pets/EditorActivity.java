@@ -17,6 +17,7 @@ package com.example.android.pets;
 
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
@@ -71,6 +72,20 @@ public class EditorActivity extends AppCompatActivity {
         mGenderSpinner = (Spinner) findViewById(R.id.spinner_gender);
 
         setupSpinner();
+
+        // examine the intent that was used to launch this activiy, on order to figure out
+        // if we're creating a new pet or editing an existing one
+        Intent intent = getIntent();
+        Uri currentPetUri = intent.getData();
+
+        // if the intent does not contain a pet content URI, then we know that we are
+        // creating a new pet.
+        if(currentPetUri == null) {
+            setTitle(R.string.editor_activity_title_new_pet);
+        } else {
+            // otherwise this is an existing pet - set tittle "Edit pet"
+            setTitle(R.string.editor_activity_title_edit_pet);
+        }
     }
 
     /**
