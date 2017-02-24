@@ -222,8 +222,6 @@ public class PetProvider extends ContentProvider {
      */
     private Uri insertPet(Uri uri, ContentValues values) {
 
-        checkDataValidation(values);
-
         // Get writable database
         SQLiteDatabase database = mPetDbHelper.getWritableDatabase();
 
@@ -252,9 +250,8 @@ public class PetProvider extends ContentProvider {
     private int updatePet(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         SQLiteDatabase database = mPetDbHelper.getWritableDatabase();
 
+        //  || isDataValid(values)
         if(values.size() > 0) {
-            // check data validation
-            checkDataValidation(values);
 
             // Perform the update on the database and get the number of rows affected
             int rowsUpdated = database.update(
@@ -278,51 +275,47 @@ public class PetProvider extends ContentProvider {
         }
     }
 
-    // helper method for data validation
-    private void checkDataValidation(ContentValues values) {
-
-        // Check that the NAME is not null
-        if(values.containsKey(PetEntry.COLUMN_PET_NAME)) {
-
-            String name = values.getAsString(PetEntry.COLUMN_PET_NAME);
-
-            if (TextUtils.isEmpty(name)) {
-                throw new IllegalArgumentException("Pet requires a name");
-            } else {
-                Log.d(LOG_TAG, "pet name is not null");
-            }
-        }
-
-        // No need to check the breed, any value is valid (including null).
-
-        // Check that the GENDER is not null
-        if(values.containsKey(PetEntry.COLUMN_PET_GENDER)) {
-
-            Integer gender = values.getAsInteger(PetEntry.COLUMN_PET_GENDER);
-
-            if (gender != null && PetContract.isGenderValueValid(gender)) {
-                Log.d(LOG_TAG, "pet gender is valid");
-            } else {
-                throw new IllegalArgumentException("Invalid gender value");
-            }
-        }
-
-        // Check that the BREED is not null
-        if(values.containsKey(PetEntry.COLUMN_PET_WEIGHT)) {
-
-            Integer weight = values.getAsInteger(PetEntry.COLUMN_PET_WEIGHT);
-
-            if (weight != null && weight < 0) {
-                throw new IllegalArgumentException("Invalid weight value");
-            } else {
-                Log.d(LOG_TAG, "pet weight is valid value");
-            }
-        }
-        // if all editText field is empty, just return and don't save anything into db
-        // if weight field is empty just save 0
-
-        //
-
-
-    }
+     //helper method for data validation
+//    public boolean isDataValid(ContentValues values) {
+//
+//        // if all editText field is empty, just return and don't save anything into db
+//        // if weight field is empty just save 0
+//
+//
+//        // Check that the NAME is not null
+//        if(values.containsKey(PetEntry.COLUMN_PET_NAME)) {
+//            String name = values.getAsString(PetEntry.COLUMN_PET_NAME);
+//
+//            if (TextUtils.isEmpty(name)) { // true if null or zero length
+//                Log.d("name editField", "is null or has 0 length");
+//                return false;
+//            }
+//        }
+//
+//        // No need to check the BREED, any value is valid (including null).
+//
+//        // Check that the GENDER is not null
+//        if(values.containsKey(PetEntry.COLUMN_PET_GENDER)) {
+//            Integer gender = values.getAsInteger(PetEntry.COLUMN_PET_GENDER);
+//            String genderStringFormat = String.valueOf(gender);
+//
+//            if(TextUtils.isEmpty(genderStringFormat)) {
+//                Log.d("name editField", "is null!");
+//                return false;
+//            }
+//        }
+//
+//        // Check that the WEIGHT is not null
+//        if(values.containsKey(PetEntry.COLUMN_PET_WEIGHT)) {
+//
+//            Integer weight = values.getAsInteger(PetEntry.COLUMN_PET_WEIGHT);
+//            //String weightStringFormat = String.valueOf(weight);
+//
+//            if (weight < 0) {
+//                return false;
+//            }
+//        }
+//        // data is valid
+//        return true;
+//    }
 }

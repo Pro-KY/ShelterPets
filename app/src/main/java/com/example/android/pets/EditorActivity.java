@@ -17,6 +17,7 @@ package com.example.android.pets;
 
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -27,11 +28,13 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.app.NavUtils;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -39,8 +42,10 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.example.android.pets.data.PetContract;
 import com.example.android.pets.data.PetContract.PetEntry;
 import com.example.android.pets.data.PetDbHelper;
+import com.example.android.pets.data.PetProvider;
 
 import static android.R.id.input;
 import static android.icu.lang.UCharacter.GraphemeClusterBreak.L;
@@ -81,6 +86,21 @@ public class EditorActivity extends AppCompatActivity
     // add_mode = true, edit_mode = false
     private static boolean ADD_MODE;
 
+    // Boolean flag that keeps track of whether the pet has been edited (true) or not (false)
+    private boolean mPetHasChanged = false;
+
+    /**
+     * OnTouchListener that listens for any user touches on a View, implying that they are modifying
+     * the view, and we change the mPetHasChanged boolean to true.
+     */
+    private View.OnTouchListener mTouchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            mPetHasChanged = true;
+            return false;
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -113,6 +133,14 @@ public class EditorActivity extends AppCompatActivity
             getSupportLoaderManager().initLoader(PET_LOADER, null, this);
         }
         Log.d("ADD_MODE", String.valueOf(ADD_MODE));
+
+        // Setup OnTouchListeners on all the input fields, so we can determine if the user
+        // has touched or modified them.
+        mNameEditText.setOnTouchListener(mTouchListener);
+        mBreedEditText.setOnTouchListener(mTouchListener);
+        mWeightEditText.setOnTouchListener(mTouchListener);
+        mGenderSpinner.setOnTouchListener(mTouchListener);
+
     }
 
     /**
@@ -163,22 +191,48 @@ public class EditorActivity extends AppCompatActivity
         // number of updated rows
         int updatedRows = 0;
 
-        Log.d("insertPet", "start -----");
+        // -------- EditText fields validation ---------
+        // retrieve data from nNameEditText
         String nameString = mNameEditText.getText().toString().trim();
-        Log.d("nameString", nameString);
+
+        // if nameEditText is empty or null just finish the activity
+        if(TextUtils.isEmpty(nameString)) {
+            finish();
+            return;
+        }
+
+        // retrieve data from mBreedEditText
         String breedString = mBreedEditText.getText().toString().trim();
-        Log.d("breedString", breedString);
+
+        // retrieve data from mWeightEditText
         String weightString = mWeightEditText.getText().toString().trim();
-        Log.d("weightString", weightString);
-        int weight = Integer.parseInt(weightString);
-        Log.d("insertPet", "finish -----");
+
+        int petWeight;
+
+        // if mWeightEditText is not empty or null - parse it
+        if(!TextUtils.isEmpty(weightString)) {
+            petWeight = Integer.parseInt(weightString);
+
+            if (petWeight < 0) {
+                Toast.makeText(this, R.string.toast_invalid_data, Toast.LENGTH_SHORT).show();
+                return;
+            }
+        } else {
+            // otherwise, set pet weight to zero
+            petWeight = 0;
+        }
+
+        Log.d("nameString", nameString);
+        Log.d("breedString", breedString);
+        Log.d("genderString", String.valueOf(mGender));
+        Log.d("weightString", String.valueOf(petWeight));
 
         // Create a new map of values, where column names are the keys
         ContentValues values = new ContentValues();
         values.put(PetEntry.COLUMN_PET_NAME, nameString);
         values.put(PetEntry.COLUMN_PET_BREED, breedString);
         values.put(PetEntry.COLUMN_PET_GENDER, mGender);
-        values.put(PetEntry.COLUMN_PET_WEIGHT, weight);
+        values.put(PetEntry.COLUMN_PET_WEIGHT, petWeight);
 
         // if it's add_mode -> insert pet
         if(ADD_MODE) {
@@ -248,8 +302,27 @@ public class EditorActivity extends AppCompatActivity
                 return true;
             // Respond to a click on the "Up" arrow button in the app bar
             case android.R.id.home:
-                // Navigate back to parent activity (CatalogActivity)
-                NavUtils.navigateUpFromSameTask(this);
+                // If the pet hasn't changed, continue with navigating up to parent activity
+                // which is the CatalogActivity
+                if (!mPetHasChanged) {
+                    NavUtils.navigateUpFromSameTask(EditorActivity.this);
+                    return true;
+                }
+
+                // Otherwise if there are unsaved changes, setup a dialog to warn the user.
+                // Create a click listener to handle the user confirming that
+                // changes should be discarded.
+                DialogInterface.OnClickListener discardButtonClickListener =
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                // User clicked "Discard" button, navigate to parent activity.
+                                NavUtils.navigateUpFromSameTask(EditorActivity.this);
+                            }
+                        };
+
+                // Show a dialog that notifies the user they have unsaved changes
+                showUnsavedChangesDialog(discardButtonClickListener);
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -329,4 +402,56 @@ public class EditorActivity extends AppCompatActivity
         mWeightEditText.setText("");
         mGenderSpinner.setSelection(0);
     }
+
+
+    // Show a dialog that warns the user there are unsaved changes that will be lost
+    // if they continue leaving the editor.
+    private void showUnsavedChangesDialog(
+            DialogInterface.OnClickListener discardButtonClickListener) {
+        // Create an AlertDialog.Builder and set the message, and click listeners
+        // for the positive and negative buttons on the dialog.
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.unsaved_changes_dialog_msg);
+        builder.setPositiveButton(R.string.discard, discardButtonClickListener);
+
+        builder.setNegativeButton(R.string.keep_editing, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked the "Keep editing" button, so dismiss the dialog
+                // and continue editing the pet.
+                if (dialog != null) {
+                    dialog.dismiss();
+                }
+            }
+        });
+
+        // Create and show the AlertDialog
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
+    }
+
+
+    // This method is called when the back button is pressed.
+    @Override
+    public void onBackPressed() {
+        // If the pet hasn't changed, continue with handling back button press
+        if (!mPetHasChanged) {
+            super.onBackPressed();
+            return;
+        }
+
+        // Otherwise if there are unsaved changes, setup a dialog to warn the user.
+        // Create a click listener to handle the user confirming that changes should be discarded.
+        DialogInterface.OnClickListener discardButtonClickListener =
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        // User clicked "Discard" button, close the current activity.
+                        finish();
+                    }
+                };
+
+        // Show dialog that there are unsaved changes
+        showUnsavedChangesDialog(discardButtonClickListener);
+    }
+
 }
