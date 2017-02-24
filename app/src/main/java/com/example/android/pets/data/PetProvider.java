@@ -7,6 +7,7 @@ import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
+import android.text.TextUtils;
 import android.util.Log;
 import com.example.android.pets.data.PetContract.PetEntry;
 
@@ -285,7 +286,7 @@ public class PetProvider extends ContentProvider {
 
             String name = values.getAsString(PetEntry.COLUMN_PET_NAME);
 
-            if (name == null || name.length() == 0) {
+            if (TextUtils.isEmpty(name)) {
                 throw new IllegalArgumentException("Pet requires a name");
             } else {
                 Log.d(LOG_TAG, "pet name is not null");
@@ -317,6 +318,10 @@ public class PetProvider extends ContentProvider {
                 Log.d(LOG_TAG, "pet weight is valid value");
             }
         }
+        // if all editText field is empty, just return and don't save anything into db
+        // if weight field is empty just save 0
+
+        //
 
 
     }

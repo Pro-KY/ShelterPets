@@ -22,6 +22,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.UserDictionary;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.app.NavUtils;
 import android.support.v4.content.CursorLoader;
@@ -42,12 +43,15 @@ import com.example.android.pets.data.PetContract.PetEntry;
 import com.example.android.pets.data.PetDbHelper;
 
 import static android.R.id.input;
+import static android.icu.lang.UCharacter.GraphemeClusterBreak.L;
 
 /**
  * Allows user to create a new p et or edit an existing one.
  */
 public class EditorActivity extends AppCompatActivity
         implements LoaderManager.LoaderCallbacks<Cursor> {
+
+    private static final String LOG_TAG = EditorActivity.class.getSimpleName();
 
     // unique loader id
     private static final int PET_LOADER = 1;
@@ -73,6 +77,10 @@ public class EditorActivity extends AppCompatActivity
     // Content URI for the existing pet (null if it's a new pet)
     private Uri mCurrentPetUri;
 
+    // field for switching between "edit_pet" and "add_pet" mode
+    // add_mode = true, edit_mode = false
+    private static boolean ADD_MODE;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -95,13 +103,16 @@ public class EditorActivity extends AppCompatActivity
         // creating a new pet.
         if(mCurrentPetUri == null) {
             setTitle(R.string.editor_activity_title_new_pet);
+            ADD_MODE = true;
         } else {
             // otherwise this is an existing pet - set tittle "Edit pet"
             setTitle(R.string.editor_activity_title_edit_pet);
+            ADD_MODE = false;
 
-            // initialize loader
+            // initialize a loader
             getSupportLoaderManager().initLoader(PET_LOADER, null, this);
         }
+        Log.d("ADD_MODE", String.valueOf(ADD_MODE));
     }
 
     /**
@@ -146,8 +157,11 @@ public class EditorActivity extends AppCompatActivity
     /**
      *  Get the user input from editor and save new pet data into database.
      */
-    private void insertPet() {
-        Uri mNewUri;
+    private void savePet() {
+        // inserted row id
+        long newRowId = 0;
+        // number of updated rows
+        int updatedRows = 0;
 
         Log.d("insertPet", "start -----");
         String nameString = mNameEditText.getText().toString().trim();
@@ -166,15 +180,37 @@ public class EditorActivity extends AppCompatActivity
         values.put(PetEntry.COLUMN_PET_GENDER, mGender);
         values.put(PetEntry.COLUMN_PET_WEIGHT, weight);
 
-        mNewUri = getContentResolver().insert(
-                PetEntry.CONTENT_URI,
-                values
-        );
+        // if it's add_mode -> insert pet
+        if(ADD_MODE) {
+            Log.d(LOG_TAG, "in ADD_MODE");
+            Uri mNewUri = getContentResolver().insert(
+                    PetEntry.CONTENT_URI,
+                    values
+            );
 
-        long newRowId = ContentUris.parseId(mNewUri);
+            newRowId = ContentUris.parseId(mNewUri);
+
+            Log.d("new_inserted_row_id", String.valueOf(newRowId));
+        } else {
+            // otherwise it's edit_mode -> update pet
+            Log.d(LOG_TAG, "in EDIT_MODE");
+            // Defines selection criteria for the rows you want to update
+            String mSelectionClause = PetEntry._ID + "=?";
+            int pet_id = (int) ContentUris.parseId(mCurrentPetUri);
+            String[] mSelectionArgs = {String.valueOf(pet_id)};
+
+            updatedRows = getContentResolver().update(
+                    PetEntry.CONTENT_URI,
+                    values,
+                    mSelectionClause,
+                    mSelectionArgs
+            );
+
+            Log.d("updated_rows_number", String.valueOf(updatedRows));
+        }
 
         // Show a toast message depending on whether or not the insertion was successful
-        if(newRowId == -1) {
+        if(newRowId == -1 || updatedRows == -1) {
             // If the row ID is -1, then there was an error with insertion.
             Toast.makeText(this, R.string.toast_error_saving_pet, Toast.LENGTH_SHORT).show();
         } else {
@@ -202,7 +238,7 @@ public class EditorActivity extends AppCompatActivity
             // Respond to a click on the "Save" menu option
             case R.id.action_save:
                 // Save pet to database
-                insertPet();
+                savePet();
                 // Exit activity
                 finish();
                 return true;
@@ -229,7 +265,6 @@ public class EditorActivity extends AppCompatActivity
                 PetEntry.COLUMN_PET_GENDER,
                 PetEntry.COLUMN_PET_WEIGHT
         };
-
 
         // create and return a CursorLoader that will take care of
         // creating a Cursor for the data being displayed

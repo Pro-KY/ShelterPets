@@ -83,7 +83,7 @@ public class CatalogActivity extends AppCompatActivity
         mCursorAdapter = new PetCursorAdapter (this, null);
         petListView.setAdapter(mCursorAdapter);
 
-        // setup the click listener
+        // Setup the click listener
         petListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {

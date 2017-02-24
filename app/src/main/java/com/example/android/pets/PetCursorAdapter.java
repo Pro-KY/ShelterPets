@@ -16,9 +16,6 @@ import android.widget.TextView;
 
 import com.example.android.pets.data.PetContract.PetEntry;
 
-import static android.R.attr.name;
-
-
 public class PetCursorAdapter extends CursorAdapter {
 
     public PetCursorAdapter(Context context, Cursor c) {
