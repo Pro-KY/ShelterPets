@@ -124,6 +124,10 @@ public class EditorActivity extends AppCompatActivity
         if(mCurrentPetUri == null) {
             setTitle(R.string.editor_activity_title_new_pet);
             ADD_MODE = true;
+
+            // The method invokes the onPrepareOptionsMenu being called (again) so we can dynamically
+            // (at runtime) change menu items.
+            invalidateOptionsMenu();
         } else {
             // otherwise this is an existing pet - set tittle "Edit pet"
             setTitle(R.string.editor_activity_title_edit_pet);
@@ -140,7 +144,6 @@ public class EditorActivity extends AppCompatActivity
         mBreedEditText.setOnTouchListener(mTouchListener);
         mWeightEditText.setOnTouchListener(mTouchListener);
         mGenderSpinner.setOnTouchListener(mTouchListener);
-
     }
 
     /**
@@ -282,6 +285,21 @@ public class EditorActivity extends AppCompatActivity
         // Inflate the menu options from the res/menu/menu_editor.xml file.
         // This adds menu items to the app bar.
         getMenuInflater().inflate(R.menu.menu_editor, menu);
+        return true;
+    }
+
+    /**
+     * This method is called after invalidateOptionsMenu(), so that the
+     * menu can be updated (some menu items can be hidden or made visible).
+     */
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        // If this is a new pet, hide the "Delete" menu item.
+        if (ADD_MODE) {
+            MenuItem menuItem = menu.findItem(R.id.action_delete);
+            menuItem.setVisible(false);
+        }
         return true;
     }
 
