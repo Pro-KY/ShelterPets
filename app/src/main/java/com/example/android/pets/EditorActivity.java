@@ -280,6 +280,39 @@ public class EditorActivity extends AppCompatActivity
         }
     }
 
+    // Perform the deletion of the pet in the database.
+    private void deletePet() {
+        // Defines a variable to contain the number of rows deleted
+        int mRowsDeleted = 0;
+
+        if(mCurrentPetUri != null) {
+            // Deletes the words that match the selection criteria
+            mRowsDeleted = getContentResolver().delete(
+                    mCurrentPetUri, // the user dictionary content URI
+                    null,           // where (an SQL WHERE clause)
+                    null            // selectionArgs - the values that will be replaced in where clause
+            );
+        }
+
+        Log.d("deleted_rows_number", String.valueOf(mRowsDeleted));
+
+        // Show a toast message depending on whether or not the insertion was successful
+        if(mRowsDeleted == 0) {
+            // If the row ID is 0, then a user doesn't delete anything
+            Toast.makeText(this, R.string.editor_delete_pet_failed, Toast.LENGTH_SHORT).show();
+        } else {
+            // Otherwise, the deletion was successful and we can display a toast
+            Toast.makeText(
+                    this,
+                    R.string.editor_delete_pet_successful,
+                    Toast.LENGTH_SHORT
+            ).show();
+        }
+
+        // Close the activity
+        finish();
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu options from the res/menu/menu_editor.xml file.
@@ -316,7 +349,8 @@ public class EditorActivity extends AppCompatActivity
                 return true;
             // Respond to a click on the "Delete" menu option
             case R.id.action_delete:
-                // Do nothing for now
+                // Warn the user that he clicked on the delete option
+                showDeleteConfirmationDialog();
                 return true;
             // Respond to a click on the "Up" arrow button in the app bar
             case android.R.id.home:
@@ -421,7 +455,6 @@ public class EditorActivity extends AppCompatActivity
         mGenderSpinner.setSelection(0);
     }
 
-
     // Show a dialog that warns the user there are unsaved changes that will be lost
     // if they continue leaving the editor.
     private void showUnsavedChangesDialog(
@@ -447,6 +480,33 @@ public class EditorActivity extends AppCompatActivity
         alertDialog.show();
     }
 
+    // Show a dialog that warns the user that he wants delete a pet entry
+    private void showDeleteConfirmationDialog() {
+        // Create an AlertDialog.Builder and set the message, and click listeners
+        // for the positive and negative buttons on the dialog.
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.delete_dialog_msg);
+        builder.setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked the "Delete" button, so delete the pet.
+                deletePet();
+            }
+        });
+
+        builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked the "Cancel" button, so dismiss the dialog
+                // and continue editing the pet.
+                if (dialog != null) {
+                    dialog.dismiss();
+                }
+            }
+        });
+
+        // Create and show the AlertDialog
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
+    }
 
     // This method is called when the back button is pressed.
     @Override

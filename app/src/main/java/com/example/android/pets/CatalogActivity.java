@@ -17,6 +17,7 @@ package com.example.android.pets;
 
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -28,6 +29,7 @@ import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 
 import android.util.Log;
@@ -36,9 +38,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 
 import com.example.android.pets.data.PetContract.PetEntry;
+
+import static com.example.android.pets.R.string.delete;
 
 
 /**
@@ -137,23 +142,50 @@ public class CatalogActivity extends AppCompatActivity
         Log.d(LOG_TAG, "New row ID " + newRowId);
     }
 
+    // Helper method to delete all pets in the database.
+    private void deleteAllPets() {
+        // Defines a variable to contain the number of rows deleted
+        int mRowsDeleted = 0;
+
+        // Deletes the words that match the selection criteria
+        mRowsDeleted = getContentResolver().delete(
+                PetEntry.CONTENT_URI, // The content URI to access the pet data
+                null,                 // where (an SQL WHERE clause)
+                null                  // selectionArgs - the values that will be replaced in where clause
+        );
+
+        Log.d("deleted_rows_number", String.valueOf(mRowsDeleted));
+
+        // Show a toast message depending on whether or not the insertion was successful
+        if(mRowsDeleted == 0) {
+            // If the row ID is 0, then a user doesn't delete anything
+            Toast.makeText(this, R.string.editor_delete_pets_failed, Toast.LENGTH_SHORT).show();
+        } else {
+            // Otherwise, the deletion was successful and we can display a toast
+            Toast.makeText(
+                    this,
+                    R.string.editor_delete_pets_successful,
+                    Toast.LENGTH_SHORT
+            ).show();
+        }
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // User clicked on a menu option in the app bar overflow menu
         switch (item.getItemId()) {
             // Respond to a click on the "Insert dummy data" menu option
             case R.id.action_insert_dummy_data:
-                // Do nothing for now
                 insertPet();
                 return true;
             // Respond to a click on the "Delete all entries" menu option
             case R.id.action_delete_all_entries:
-                // Do nothing for now
+                // Delete all pets from the database
+                showDeleteConfirmationDialog();
                 return true;
         }
         return super.onOptionsItemSelected(item);
     }
-
 
     // Called when a new Loader needs to be created
     @Override
@@ -189,5 +221,34 @@ public class CatalogActivity extends AppCompatActivity
     public void onLoaderReset(Loader<Cursor> loader) {
         // Callback called when data needs to be deleted
         mCursorAdapter.swapCursor(null);
+    }
+
+    // Show a dialog that warns the user that he wants delete all pet entries
+    private void showDeleteConfirmationDialog() {
+        // Create an AlertDialog.Builder and set the message, and click listeners
+        // for the positive and negative buttons on the dialog.
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.delete_pets_dialog_msg);
+
+        builder.setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked the "Delete" button, so delete the pet.
+                deleteAllPets();
+            }
+        });
+
+        builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked the "Cancel" button, so dismiss the dialog
+                // and continue editing the pet.
+                if (dialog != null) {
+                    dialog.dismiss();
+                }
+            }
+        });
+
+        // Create and show the AlertDialog
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
     }
 }
