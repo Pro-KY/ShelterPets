@@ -47,16 +47,4 @@ public final class PetContract {
         public static final int GENDER_FEMALE = 2;
     }
 
-    public static boolean isGenderValueValid(int genderValue) {
-        switch (genderValue) {
-            case GENDER_UNKNOWN:
-                return true;
-            case GENDER_MALE:
-                return true;
-            case GENDER_FEMALE:
-                return true;
-            default:
-                return false;
-        }
-    }
 }
